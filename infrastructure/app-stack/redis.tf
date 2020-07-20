@@ -15,7 +15,7 @@ resource "aws_elasticache_replication_group" "this" {
 module "cache-sg" {
   source = "terraform-aws-modules/security-group/aws"
 
-  name        = "${var.environment}-db-sg"
+  name        = "${var.environment}-cache-sg"
   description = "Security group for the cache"
   vpc_id      = module.vpc.vpc_id
 

@@ -34,7 +34,7 @@ module "asg" {
   image_id        = data.aws_ami.amazon_linux_ecs.id
   instance_type   = "t2.micro"
   key_name        = var.environment
-  security_groups = [module.vpc.default_security_group_id]
+  security_groups = [module.ec2-sg.this_security_group_id]
   iam_instance_profile = aws_iam_instance_profile.this.id
   user_data            = data.template_file.user_data.rendered
 
@@ -55,13 +55,14 @@ module "asg" {
   ]
 
   # Auto scaling group
-  asg_name                  = "${var.environment}-asg"
-  vpc_zone_identifier       = module.vpc.public_subnets
-  health_check_type         = "EC2"
-  min_size                  = 0
-  max_size                  = 3
-  desired_capacity          = 3
-  wait_for_capacity_timeout = 0
+  asg_name                    = "${var.environment}-asg"
+  vpc_zone_identifier         = module.vpc.public_subnets
+  associate_public_ip_address = true
+  health_check_type           = "EC2"
+  min_size                    = 0
+  max_size                    = 3
+  desired_capacity            = 3
+  wait_for_capacity_timeout   = 0
 
   tags = [
     {
@@ -90,6 +91,13 @@ module "ec2-sg" {
     }
   ]
 
+  egress_with_cidr_blocks = [
+    {
+      rule        = "all-all"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+
   #Not great, never in production
   ingress_with_cidr_blocks = [
     {
@@ -98,4 +106,39 @@ module "ec2-sg" {
     }
   ]
 
+}
+
+resource "aws_iam_role" "this" {
+  name = "${var.environment}_ecs_instance_role"
+  path = "/ecs/"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2008-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": ["ec2.amazonaws.com", "autoscaling.amazonaws.com"]
+      },
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_instance_profile" "this" {
+  name = "${var.environment}_ecs_instance_profile"
+  role = aws_iam_role.this.name
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_ec2_role" {
+  role       = aws_iam_role.this.id
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_ec2_cloudwatch_role" {
+  role       = aws_iam_role.this.id
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
