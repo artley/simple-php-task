@@ -60,8 +60,8 @@ function passwordMatches($username, $password)
                 <button type="submit">Login</button>
             </form>
         <? } else if ('authenticated' == $state) { ?>
-            <p>Logged in as <? echo $_SESSION['username']; ?>, On <span style="font-weight: bold;">Page 2</span></p>
-            <p>Go to <a href="index.php"><span style="font-weight: bold;">Page 1</span></a></p>
+            <p>Logged in as <? echo $_SESSION['username']; ?>, On <span style="font-weight: bold;">Page 2!</span></p>
+            <p>Go to <a href="index.php"><span style="font-weight: bold;">Page 1!</span></a></p>
         <? } ?>
 
         <? if (!empty($error)) { ?>
